@@ -242,6 +242,8 @@ static void GPSFix(TD_GEOLOC_Fix_t * fix, bool timeout) {
 
 		// Sending the message
 		TD_SIGFOX_Send(bytes, size, 2);
+		tfp_printf("A message was sent on the Sigfox network\r\n");
+		tfp_printf("GPS Fix OK\r\n");
 	}
 	else if (timeout) {
 		// If no GPS fix has been found, we still send the voltage and the temperature
@@ -277,6 +279,8 @@ static void GPSFix(TD_GEOLOC_Fix_t * fix, bool timeout) {
 
 		// Sending the message
 		TD_SIGFOX_Send(bytes, 12, 2);
+		tfp_printf("A message was sent on the Sigfox network\r\n");
+		tfp_printf("GPS Fix KO\r\n");
 	}
 }
 
@@ -301,8 +305,8 @@ static void StartFixing(uint32_t arg, uint8_t repeat_count)  {
 
 	// If there is movement during one fix_interval_movement
 	if(nb_acc_events >= 1) {
-		// tfp_printf("There were accelerometer events during the last %d seconds\r\n", fix_interval_movement);
-		// tfp_printf("Trying to send GPS fix using Sigfox...\r\n");
+		tfp_printf("There were accelerometer events during the last %d seconds (or 180 seconds if it is the first value)\r\n", fix_interval_movement);
+		tfp_printf("Trying to send GPS fix using Sigfox...\r\n");
 
 		// Trying to send GPS coordinates, and temperature, voltage
 		TD_GEOLOC_TryToFix(TD_GEOLOC_NAVIGATION, fix_timeout, GPSFix);
@@ -315,7 +319,7 @@ static void StartFixing(uint32_t arg, uint8_t repeat_count)  {
 		// Sending the test message
 		// TD_SIGFOX_Send(test, 1, 2);
 
-		// tfp_printf("No accelerometer events during the last %d seconds\r\n", fix_interval_movement);
+		tfp_printf("No accelerometer events during the last %d seconds (or 180 seconds if it is the first value)\r\n", fix_interval_movement);
 
 		// Incrementation of the variable which counts the number of consequential intervals without movement
 		nb_no_acc_events++;
@@ -324,12 +328,7 @@ static void StartFixing(uint32_t arg, uint8_t repeat_count)  {
 		if(nb_no_acc_events == com_t2_period) {
 
 			int i;
-			unsigned long t2_period;
 			uint8_t no_movement_message[12], temp;
-
-			// Calculation of the T2 period
-			t2_period = com_t2_period * fix_interval_movement;
-			// tfp_printf("No accelerometer events during the last %lu seconds\r\n", t2_period);
 
 			// Message init - Set to zero not to get random unwanted values
 			for(i=0;i<12;i++) {
@@ -371,6 +370,7 @@ static void StartFixing(uint32_t arg, uint8_t repeat_count)  {
 
 			// Sending the message
 			TD_SIGFOX_Send(no_movement_message, 12, 2);
+			tfp_printf("A message was sent on the Sigfox network\r\n");
 
 			// Reset
 			nb_no_acc_events = 0;
@@ -428,8 +428,26 @@ static void EventCallback(uint8_t source) {
 
 	// Incrementation of the variable which counts the accelerometer events
 	nb_acc_events++;
-	// tfp_printf("Accelerometer event: %d\r\n", nb_acc_events);
-	// tfp_printf("%02lX\r\n", source);
+	tfp_printf("Accelerometer event: %d\r\n", nb_acc_events);
+	tfp_printf("%02lX\r\n", source);
+	if (source & TD_ACCELERO_IRQ_XL) {
+		tfp_printf("x low\r\n");
+	}
+	if (source & TD_ACCELERO_IRQ_XH) {
+		tfp_printf("x high\r\n");
+	}
+	if (source & TD_ACCELERO_IRQ_YL) {
+		tfp_printf("y low\r\n");
+	}
+	if (source & TD_ACCELERO_IRQ_YH) {
+		tfp_printf("y high\r\n");
+	}
+	if (source & TD_ACCELERO_IRQ_ZL) {
+		tfp_printf("z low\r\n");
+	}
+	if (source & TD_ACCELERO_IRQ_ZH) {
+		tfp_printf("z high\r\n");
+	}
 }
 
 /****************************************************************************//**
@@ -449,7 +467,7 @@ static int8_t user_parse(uint8_t token) {
 	// Changes the fix_interval_movement (t1 period)
 	case AT_USER_INTERVAL:
 		if (AT_argc == 0) {
-			tfp_printf("\nGPS Fix Interval: %d", fix_interval_movement);
+			tfp_printf("GPS Fix Interval: %d\r\n", fix_interval_movement);
 		}
 		else if (AT_argc == 1) {
 			interval = AT_atoll(AT_argv[0]);
@@ -468,7 +486,7 @@ static int8_t user_parse(uint8_t token) {
 	// Changes the default timeout used for GPS fixing
 	case AT_USER_TIMEOUT:
 		if (AT_argc == 0) {
-			tfp_printf("\nGPS Fix Timeout: %d", fix_timeout);
+			tfp_printf("GPS Fix Timeout: %d\r\n", fix_timeout);
 		}
 		else if (AT_argc == 1) {
 			timeout = AT_atoll(AT_argv[0]);
@@ -484,17 +502,17 @@ static int8_t user_parse(uint8_t token) {
 		}
 		break;
 
-	// Changes the default GPS mode either to TD_GEOLOC_OFF, or TD_GEOLOC_HW_BCKP or TD_GEOLOC_POWER_SAVE_MODE
+	// Changes the default GPS mode either to TD_GEOLOC_OFF or TD_GEOLOC_HW_BCKP
 	case AT_USER_MODE:
 		if (AT_argc == 1){
 			mode = AT_atoll(AT_argv[0]);
 			if (mode == 0) {
 				gps_mode = TD_GEOLOC_OFF;
-				tfp_printf("\nThe GPS Mode which is used is : TD_GEOLOC_OFF");
+				tfp_printf("The GPS Mode which is used is : TD_GEOLOC_OFF\r\n");
 			}
 			else if(mode == 1) {
 				gps_mode = TD_GEOLOC_HW_BCKP;
-				tfp_printf("\nThe GPS Mode which is used is : TD_GEOLOC_HW_BCKP");
+				tfp_printf("The GPS Mode which is used is : TD_GEOLOC_HW_BCKP\r\n");
 			}
 			else {
 				result = AT_ERROR;
@@ -509,10 +527,10 @@ static int8_t user_parse(uint8_t token) {
 	case AT_USER_TYPE:
 		if (AT_argc == 0) {
 			if(type_message) {
-				tfp_printf("\nType message: %d: Last GPS Position, Temperature and Voltage", type_message);
+				tfp_printf("Type message: %d: Last GPS Position, Temperature and Voltage\r\n", type_message);
 			}
 			else {
-				tfp_printf("\nType message: %d: Only Temperature and Voltage", type_message);
+				tfp_printf("Type message: %d: Only Temperature and Voltage\r\n", type_message);
 			}
 		}
 		else if (AT_argc == 1) {
@@ -537,7 +555,7 @@ static int8_t user_parse(uint8_t token) {
 	// Change the t2 period (period of time after which the device has to send a message if there is no movement)
 	case AT_USER_T2_PERIOD:
 		if (AT_argc == 0) {
-			tfp_printf("\nT2 period value: %d", com_t2_period * fix_interval_movement);
+			tfp_printf("T2 period value: %d\r\n", com_t2_period * fix_interval_movement);
 		}
 		else if (AT_argc == 1) {
 			multiplier = AT_atoll(AT_argv[0]);
@@ -631,7 +649,7 @@ void TD_USER_Loop(void) {
 
 	int c;
 	// While there are characters
-	while ((c = TD_UART_GetChar()) >= 0 ) {
+	while ((c = TD_UART_GetChar()) >= 0) {
 		// Parse them using the AT interpreter
 		AT_Parse(c);
 	}

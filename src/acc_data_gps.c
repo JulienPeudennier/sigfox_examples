@@ -109,7 +109,6 @@ int ds_id; // Delayed start scheduler id
 int fix_timeout = 120; // Maximum waiting time of the device for finding GPS position
 int fix_interval_movement = 3600; // Default interval used to send data if there is movement (t1 period)
 int acc_print = 1; // Variable for choosing if the user wants to print data on serial, 1 is ok
-bool is_started = false;
 uint8_t acc_freq = TD_ACCELERO_1HZ;
 uint8_t acc_scale = TD_ACCELERO_2G;
 
@@ -388,7 +387,7 @@ static int8_t user_parse(uint8_t token) {
 
 	switch (token) {
 
-	// For choosing the frequency
+	// For choosing the frequency to retrieve accelerometer data
 	case AT_USER_ACCFREQ:
 		if (AT_argc == 0){
 			tfp_printf("Accelerometer's frequency is: %d\r\n", acc_freq);
@@ -459,14 +458,14 @@ static int8_t user_parse(uint8_t token) {
 		}
 		break;
 
-	// For choosing if accelerometer will be print on serial
+	// For choosing if accelerometer will be printed on the serial console
 	case AT_USER_ACCDATA:
 		if (AT_argc == 0) {
 			if(acc_print == 1) {
-				tfp_printf("\nPrint accelerometer data on serial: Yes");
+				tfp_printf("Print accelerometer data on serial: Yes\r\n");
 			}
 			else {
-				tfp_printf("\nPrint accelerometer data on serial: No");
+				tfp_printf("Print accelerometer data on serial: No\r\n");
 			}
 		}
 		else if (AT_argc == 1) {
@@ -488,11 +487,10 @@ static int8_t user_parse(uint8_t token) {
 		}
 		break;
 
-	// Manually starts the fixing with given interval
 	// Changes the fix_interval_movement (t1 period)
 	case AT_USER_INTERVAL:
 		if (AT_argc == 0) {
-			tfp_printf("\nGPS Fix Interval: %d", fix_interval_movement);
+			tfp_printf("GPS Fix Interval: %d\r\n", fix_interval_movement);
 		}
 		else if (AT_argc == 1) {
 			interval = AT_atoll(AT_argv[0]);
@@ -514,15 +512,15 @@ static int8_t user_parse(uint8_t token) {
 			mode = AT_atoll(AT_argv[0]);
 			if (mode == 0) {
 				gps_mode = TD_GEOLOC_OFF;
-				tfp_printf("\nThe GPS Mode which is used is : TD_GEOLOC_OFF");
+				tfp_printf("The GPS Mode which is used is : TD_GEOLOC_OFF\r\n");
 			}
 			else if(mode == 1) {
 				gps_mode = TD_GEOLOC_HW_BCKP;
-				tfp_printf("\nThe GPS Mode which is used is : TD_GEOLOC_HW_BCKP");
+				tfp_printf("The GPS Mode which is used is : TD_GEOLOC_HW_BCKP\r\n");
 			}
 			else if(mode == 2) {
 				gps_mode = TD_GEOLOC_POWER_SAVE_MODE;
-				tfp_printf("\nThe GPS Mode which is used is : TD_GEOLOC_POWER_SAVE_MODE");
+				tfp_printf("The GPS Mode which is used is : TD_GEOLOC_POWER_SAVE_MODE\r\n");
 			}
 			else {
 				result = AT_ERROR;
@@ -536,7 +534,7 @@ static int8_t user_parse(uint8_t token) {
 		// Changes the default timeout used for GPS fixing
 		case AT_USER_TIMEOUT:
 			if (AT_argc == 0) {
-				tfp_printf("\nGPS Fix Timeout: %d", fix_timeout);
+				tfp_printf("GPS Fix Timeout: %d\r\n", fix_timeout);
 			}
 			else if (AT_argc == 1) {
 				timeout = AT_atoll(AT_argv[0]);
